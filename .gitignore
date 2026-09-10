@@ -1,0 +1,15 @@
+.env
+.env.local
+node_modules
+.next
+
+# databases
+*.db
+*.db-journal
+*.db-wal
+splitpot.db
+
+# misc
+.DS_Store
+.vercel
+coverage
