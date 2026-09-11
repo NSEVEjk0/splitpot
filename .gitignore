@@ -1,7 +1,11 @@
-.env
-.env.local
 node_modules
 .next
+
+# env files — never commit
+.env
+.env.local
+.env*.local
+.env.production
 
 # databases
 *.db
@@ -13,3 +17,4 @@ splitpot.db
 .DS_Store
 .vercel
 coverage
+*.bak

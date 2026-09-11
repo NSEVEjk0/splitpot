@@ -34,6 +34,8 @@ export interface AppConfig {
   apiKey: string;
   handle: string;
   adminToken: string;
+  hostKeySecret: string;
+  sessionSecret: string;
   tursoUrl?: string;
   tursoAuthToken?: string;
 }
@@ -45,6 +47,8 @@ export function config(): AppConfig {
     apiKey: process.env.MOOVE_API_KEY || "",
     handle: process.env.MOOVE_HANDLE || "@ckay",
     adminToken: process.env.ADMIN_TOKEN || "",
+    hostKeySecret: process.env.HOST_KEY_SECRET || "",
+    sessionSecret: process.env.SESSION_SECRET || "",
     tursoUrl: process.env.TURSO_DATABASE_URL || undefined,
     tursoAuthToken: process.env.TURSO_AUTH_TOKEN || undefined,
   };

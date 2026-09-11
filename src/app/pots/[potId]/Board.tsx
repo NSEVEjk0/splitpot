@@ -36,45 +36,46 @@ export default function Board({ initialPot }: { initialPot: PotWithParticipants 
 
   const paidCount = pot.participants.filter((p) => p.status === "paid").length;
   const complete = pot.status === "complete";
+  const hostHandle = pot.hostHandle ?? "@ckay";
 
   return (
-    <div className="space-y-6">
-      <section className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{pot.title}</h1>
-        <p className="text-neutral-600">
-          Total {pot.totalAmount} {pot.currencyNote} · {paidCount} of{" "}
-          {pot.participants.length} paid
-        </p>
-      </section>
-
+    <div>
+      <h1 className="board-title">{pot.title}</h1>
+      <p className="sub">
+        Total {pot.totalAmount} {pot.currencyNote} · Money goes to the host ({hostHandle})
+      </p>
+      <p className="progress">
+        {paidCount} of {pot.participants.length} paid
+      </p>
       {complete ? (
-        <p className="rounded-lg bg-green-100 px-4 py-3 text-lg font-semibold text-green-900">
+        <p
+          style={{
+            fontWeight: 700,
+            color: "#9adbc4",
+            background: "rgba(47,111,100,.35)",
+            borderRadius: 14,
+            padding: "14px 18px",
+          }}
+        >
           Pot complete
         </p>
       ) : null}
 
-      <ul className="divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+      <ul style={{ listStyle: "none", padding: 0, marginTop: 20 }}>
         {pot.participants.map((p) => {
           const paid = p.status === "paid";
           return (
-            <li
-              key={p.id}
-              className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${
-                paid ? "bg-green-50" : ""
-              }`}
-            >
-              <div className="min-w-0">
-                <p className="font-medium">{p.name}</p>
-                <p className="text-sm text-neutral-600">
-                  {p.shareAmount} {pot.currencyNote} ·{" "}
-                  <span className={paid ? "font-medium text-green-700" : "text-neutral-500"}>
-                    {paid ? "paid" : "unpaid"}
-                  </span>
+            <li key={p.id} className={`row ${paid ? "paid" : ""}`}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 600 }}>{p.name}</p>
+                <p className="sub" style={{ margin: 0 }}>
+                  <span className="amt">{p.shareAmount}</span> {pot.currencyNote} ·{" "}
+                  {paid ? "paid" : "unpaid"}
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 {paid ? (
-                  <span className="rounded-full bg-green-600 px-3 py-1 font-medium text-white">
+                  <span className="btn" style={{ background: "var(--teal)", color: "#eafff7" }}>
                     Paid
                   </span>
                 ) : p.moovePayUrl ? (
@@ -82,16 +83,16 @@ export default function Board({ initialPot }: { initialPot: PotWithParticipants 
                     href={p.moovePayUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-md bg-neutral-900 px-3 py-1.5 font-medium text-white"
+                    className="btn btn-gold"
                   >
                     Pay
                   </a>
                 ) : (
-                  <span className="text-neutral-400">no link</span>
+                  <span className="sub">no link</span>
                 )}
                 <a
                   href={`/pots/${pot.id}/p/${p.id}`}
-                  className="text-neutral-600 underline hover:text-neutral-900"
+                  style={{ color: "var(--gold)", fontSize: ".92rem" }}
                 >
                   Proof
                 </a>
@@ -101,7 +102,7 @@ export default function Board({ initialPot }: { initialPot: PotWithParticipants 
         })}
       </ul>
 
-      <p className="text-xs text-neutral-500">
+      <p className="sub" style={{ marginTop: 20 }}>
         This board refreshes every 3 seconds straight from Moove.
       </p>
     </div>

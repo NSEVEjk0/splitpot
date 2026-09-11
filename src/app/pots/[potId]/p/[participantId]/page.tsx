@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { BRAND } from "@/lib/brand";
 import { verify } from "@/lib/service";
 
 export const runtime = "nodejs";
@@ -43,11 +42,14 @@ export default async function ProofPage({
         {result.paid ? (
           <p className="mt-2 text-neutral-700">
             {result.name} paid in the token and chain of their choice. Moove Agentic
-            Payments converted and settled it to{" "}
-            <a href={BRAND.mooveProfileUrl} className="font-medium underline">
+            Payments converted and settled it to the host (
+            <a
+              href={`https://www.moove.xyz/${result.handle}`}
+              className="font-medium underline"
+            >
               {result.handle}
             </a>
-            {result.completedAt ? ` on ${result.completedAt}` : ""}.
+            ){result.completedAt ? ` on ${result.completedAt}` : ""}.
           </p>
         ) : (
           <p className="mt-2 text-neutral-700">

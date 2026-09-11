@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as statusGet } from "@/app/api/pots/[potId]/status/route";
 import { createPot } from "@/lib/service";
 import { __resetStoreForTests } from "@/lib/store";
+import { hostContextForPot } from "@/lib/hosts";
 
 /**
  * POST (create) always returns a pending link. GET (status) returns whatever
@@ -46,11 +47,16 @@ describe("GET /api/pots/[potId]/status", () => {
     const completed = new Set<string>();
     vi.stubGlobal("fetch", mockFetch(completed));
 
-    const pot = await createPot({
-      title: "Dinner",
-      total: "30.00",
-      names: ["Ada", "Chidi"],
-    });
+    const pot = await createPot(
+      {
+        title: "Dinner",
+        people: [
+          { name: "Ada", amount: "15.00" },
+          { name: "Chidi", amount: "15.00" },
+        ],
+      },
+      await hostContextForPot(null)
+    );
     const [first, second] = pot.participants;
 
     // nothing paid yet
@@ -95,7 +101,16 @@ describe("GET /api/pots/[potId]/status", () => {
     const fetchMock = mockFetch(completed);
     vi.stubGlobal("fetch", fetchMock);
 
-    const pot = await createPot({ title: "Trip", total: "20.00", names: ["Ada", "Chidi"] });
+    const pot = await createPot(
+      {
+        title: "Trip",
+        people: [
+          { name: "Ada", amount: "10.00" },
+          { name: "Chidi", amount: "10.00" },
+        ],
+      },
+      await hostContextForPot(null)
+    );
     completed.add(pot.participants[0].mooveLinkId!);
 
     await statusGet(new Request("http://localhost/x"), { params: { potId: pot.id } });

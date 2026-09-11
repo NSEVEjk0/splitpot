@@ -7,6 +7,9 @@ import { config } from "./config";
  * completion status. Splitpot never moves funds — Moove does. We only create
  * links and read whether they have been paid.
  *
+ * The API key is passed explicitly: a connected host's own key when they have
+ * a session, the default demo host's env key otherwise.
+ *
  * The response shape is parsed defensively: Moove's OpenAPI schema is the
  * source of truth, and different deployments have surfaced the same values
  * under slightly different field names, so we accept the common aliases.
@@ -32,8 +35,7 @@ export interface PaymentLink {
 const CREATE_PATH = "/v1/payment-link";
 const GET_PATH = "/v1/payment-link"; // + "/{id}"
 
-function headers(): Record<string, string> {
-  const { apiKey } = config();
+function headers(apiKey: string): Record<string, string> {
   return {
     "X-API-Key": apiKey,
     "Content-Type": "application/json",
@@ -81,12 +83,13 @@ async function readBody(res: Response): Promise<any> {
 }
 
 export async function createPaymentLink(
-  input: CreatePaymentLinkInput
+  input: CreatePaymentLinkInput,
+  apiKey: string
 ): Promise<PaymentLink> {
   const { apiBaseUrl } = config();
   const res = await fetch(`${apiBaseUrl}${CREATE_PATH}`, {
     method: "POST",
-    headers: headers(),
+    headers: headers(apiKey),
     body: JSON.stringify({
       toAmount: input.toAmount,
       description: input.description,
@@ -102,11 +105,11 @@ export async function createPaymentLink(
   return parsePaymentLink(body);
 }
 
-export async function getPaymentLink(id: string): Promise<PaymentLink> {
+export async function getPaymentLink(id: string, apiKey: string): Promise<PaymentLink> {
   const { apiBaseUrl } = config();
   const res = await fetch(`${apiBaseUrl}${GET_PATH}/${encodeURIComponent(id)}`, {
     method: "GET",
-    headers: headers(),
+    headers: headers(apiKey),
   });
   const body = await readBody(res);
   if (!res.ok) {

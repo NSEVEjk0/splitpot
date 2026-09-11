@@ -16,6 +16,9 @@ function rowToPot(r: Row): Pot {
     currencyNote: String(r.currency_note),
     status: String(r.status) as PotStatus,
     createdAt: String(r.created_at),
+    hostId: r.host_id == null ? null : String(r.host_id),
+    hostHandle: null, // joined in getPotWithParticipants
+    isDemoHost: r.host_id == null,
   };
 }
 
@@ -42,8 +45,8 @@ export async function insertPotWithParticipants(
   const db = getDb();
   const stmts = [
     {
-      sql: `INSERT INTO pots (id, title, total_amount, currency_note, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO pots (id, title, total_amount, currency_note, status, created_at, host_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
       args: [
         pot.id,
         pot.title,
@@ -51,6 +54,7 @@ export async function insertPotWithParticipants(
         pot.currencyNote,
         pot.status,
         pot.createdAt,
+        pot.hostId,
       ],
     },
     ...participants.map((p) => ({
@@ -80,11 +84,14 @@ export async function getPotWithParticipants(
   await ensureSchema();
   const db = getDb();
   const potRes = await db.execute({
-    sql: `SELECT * FROM pots WHERE id = ?`,
+    sql: `SELECT p.*, h.handle AS host_handle
+          FROM pots p LEFT JOIN hosts h ON h.id = p.host_id
+          WHERE p.id = ?`,
     args: [potId],
   });
   if (potRes.rows.length === 0) return null;
   const pot = rowToPot(potRes.rows[0]);
+  pot.hostHandle = potRes.rows[0].host_handle == null ? null : String(potRes.rows[0].host_handle);
   const partRes = await db.execute({
     sql: `SELECT * FROM participants WHERE pot_id = ? ORDER BY position ASC`,
     args: [potId],
@@ -151,4 +158,5 @@ export async function __resetStoreForTests(): Promise<void> {
   const db = getDb();
   await db.execute(`DELETE FROM participants`);
   await db.execute(`DELETE FROM pots`);
+  await db.execute(`DELETE FROM hosts`);
 }

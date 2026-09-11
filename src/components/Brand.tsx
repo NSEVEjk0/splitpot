@@ -1,58 +1,66 @@
-import { BRAND } from "@/lib/brand";
+import { BackLink } from "@/components/BackLink";
+const HANDLE = "@ckay";
+const X_URL = "https://x.com/CRYPTFRANI";
+const MOOVE_URL = "https://www.moove.xyz/@ckay";
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <div className="flex items-baseline gap-2">
-          <a href="/" className="text-lg font-semibold tracking-tight text-neutral-900">
-            Splitpot
-          </a>
-          <span className="text-sm text-neutral-500">settles to {BRAND.handle} on Moove</span>
-        </div>
-        <nav className="flex items-center gap-3 text-sm">
-          <a
-            href={BRAND.mooveProfileUrl}
-            className="text-neutral-700 underline hover:text-neutral-900"
-          >
-            {BRAND.handle} on Moove
-          </a>
-          <a
-            href={BRAND.xUrl}
-            className="text-neutral-700 underline hover:text-neutral-900"
-          >
-            X
-          </a>
-        </nav>
-      </div>
+    <header className="site-header">
+      <BackLink />
+      <a className="wordmark" href="/">
+        <em>Split</em>pot
+      </a>
+      <nav className="nav">
+        <a href="/connect">Connect</a>
+        <a href={MOOVE_URL}>{HANDLE}</a>
+        <a href={X_URL} target="_blank" rel="noreferrer">
+          X
+        </a>
+      </nav>
     </header>
   );
 }
 
 export function SiteFooter() {
   return (
-    <footer className="mt-12 border-t border-neutral-200 bg-white">
-      <div className="mx-auto max-w-3xl space-y-2 px-4 py-6 text-sm text-neutral-600">
-        <p>{BRAND.tagline}</p>
-        <p className="flex flex-wrap items-center gap-2">
-          <span>Moove Handle</span>
-          <a
-            href={BRAND.mooveProfileUrl}
-            className="font-medium text-neutral-900 underline"
-          >
-            {BRAND.handle}
-          </a>
-          <span aria-hidden="true">·</span>
-          <a href={BRAND.xUrl} className="font-medium text-neutral-900 underline">
-            {BRAND.xUrl}
-          </a>
+    <footer className="site-footer">
+      <p style={{ position: "absolute", left: "-9999px" }}>
+        Split any bill. Each person pays in any token on any chain. It settles
+        to @ckay on Moove. Built by @ckay
+      </p>
+      <p>
+        Enter the total and the names. Each person gets a pay link. Money goes
+        to the host.
+      </p>
+      <div className="moove-block">
+        <h2>What is Moove?</h2>
+        <p>
+          Moove is software for moving value. You send, receive, and convert
+          crypto across chains without asking the payer which network they are
+          on. Agentic Payments lets a product create a checkout link; the payer
+          uses any token they hold; the money settles to a Moove Handle.
+          Splitpot uses that so a group bill becomes one link per person,
+          settled to the host on Moove.
         </p>
-        <p className="text-neutral-500">{BRAND.builtByLine}</p>
-        <p className="text-xs text-neutral-400">
-          Splitpot creates payment links and reads their completion. Moove Agentic
-          Payments moves the funds.
+        <p>
+          <a href="https://x.com/moovexyz" target="_blank" rel="noreferrer">
+            Moove on X
+          </a>
+          {" · "}
+          <a href="https://www.moove.xyz" target="_blank" rel="noreferrer">
+            Use Moove
+          </a>
         </p>
       </div>
+      <p>
+        Built by @ckay
+        {" · "}
+        <a href={MOOVE_URL}>{HANDLE}</a>
+        {" · "}
+        <a href={X_URL} target="_blank" rel="noreferrer">
+          {X_URL}
+        </a>
+      </p>
     </footer>
   );
 }

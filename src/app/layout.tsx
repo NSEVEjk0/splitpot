@@ -1,23 +1,25 @@
+
 import type { Metadata } from "next";
-import "./globals.css";
+import { Fraunces, Manrope, IBM_Plex_Mono } from "next/font/google";
 import { SiteFooter, SiteHeader } from "@/components/Brand";
-import { BRAND } from "@/lib/brand";
+import "./globals.css";
+
+const display = Fraunces({ subsets: ["latin"], variable: "--font-display", style: ["normal", "italic"] });
+const sans = Manrope({ subsets: ["latin"], variable: "--font-sans" });
+const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Splitpot — group pots settled through Moove",
-  description: BRAND.tagline,
+  title: "Splitpot — split the bill on Moove",
+  description: "Split a shared bill into one Moove pay link per person. Friends pay in any token on any chain. It settles to the host.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col">
+      <body className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+        <div className="glow" aria-hidden="true" />
         <SiteHeader />
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">{children}</main>
+        <main>{children}</main>
         <SiteFooter />
       </body>
     </html>

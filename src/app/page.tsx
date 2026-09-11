@@ -1,30 +1,81 @@
 "use client";
+import { HomeIntro } from "@/components/HomeIntro";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BRAND } from "@/lib/brand";
 
 const MIN_PEOPLE = 2;
 const MAX_PEOPLE = 12;
 
+interface Row {
+  name: string;
+  amount: string;
+}
+
+function emptyRow(): Row {
+  return { name: "", amount: "" };
+}
+
+function sumRows(rows: Row[]): string {
+  let cents = 0;
+  for (const r of rows) {
+    const s = r.amount.trim();
+    if (!s) continue;
+    if (!/^\d+(\.\d{1,2})?$/.test(s)) continue;
+    const [whole, frac = ""] = s.split(".");
+    cents += parseInt(whole, 10) * 100 + parseInt((frac + "00").slice(0, 2), 10);
+  }
+  const whole = Math.floor(cents / 100);
+  const frac = cents % 100;
+  return `${whole}.${String(frac).padStart(2, "0")}`;
+}
+
 export default function HomePage() {
   const [title, setTitle] = useState("");
-  const [total, setTotal] = useState("");
-  const [namesText, setNamesText] = useState("");
+  const [rows, setRows] = useState<Row[]>([emptyRow(), emptyRow()]);
+  const [evenAmount, setEvenAmount] = useState("");
   const [adminToken, setAdminToken] = useState("");
+  const [host, setHost] = useState<{ handle: string; keyLast4: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const names = namesText
-    .split(/[\n,]/)
-    .map((n) => n.trim())
-    .filter((n) => n.length > 0);
+  useEffect(() => {
+    fetch("/api/host/me")
+      .then((r) => r.json())
+      .then((b) => setHost(b?.host ?? null))
+      .catch(() => setHost(null));
+  }, []);
+
+  const filled = rows.filter((r) => r.name.trim().length > 0);
+
+  function updateRow(i: number, patch: Partial<Row>) {
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+
+  function applySameForEveryone() {
+    const s = evenAmount.trim();
+    if (!/^\d+(\.\d{1,2})?$/.test(s)) return;
+    setRows((prev) => prev.map(() => ({ name: "", amount: s })));
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (names.length < MIN_PEOPLE || names.length > MAX_PEOPLE) {
-      setError(`Add between ${MIN_PEOPLE} and ${MAX_PEOPLE} first names.`);
+    const people = rows
+      .map((r) => ({ name: r.name.trim(), amount: r.amount.trim() }))
+      .filter((r) => r.name.length > 0 || r.amount.length > 0);
+
+    if (people.length < MIN_PEOPLE || people.length > MAX_PEOPLE) {
+      setError(`Add between ${MIN_PEOPLE} and ${MAX_PEOPLE} people.`);
+      return;
+    }
+    if (people.some((p) => !p.name || !p.amount)) {
+      setError("Every person needs a name and an amount.");
+      return;
+    }
+    if (people.some((p) => !/^\d+(\.\d{1,2})?$/.test(p.amount) || Number(p.amount) <= 0)) {
+      setError("Each amount must be a positive number with at most 2 decimals.");
       return;
     }
 
@@ -34,9 +85,9 @@ export default function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-token": adminToken,
+          ...(host ? {} : { "x-admin-token": adminToken }),
         },
-        body: JSON.stringify({ title, total, names }),
+        body: JSON.stringify({ title, people }),
       });
       const body = await res.json();
       if (!res.ok) {
@@ -52,106 +103,148 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Start a pot</h1>
-        <p className="text-neutral-600">{BRAND.tagline}</p>
-      </section>
+    <>
+      <HomeIntro />
 
-      <form onSubmit={onSubmit} className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6">
-        <div className="space-y-1">
-          <label htmlFor="title" className="block text-sm font-medium">
-            What is this pot for?
-          </label>
+      <div style={{ marginTop: 48 }}>
+        {host ? (
+          <p className="sub" style={{ marginBottom: 8 }}>
+            Creating as <strong>{host.handle}</strong> — pots settle to your Handle.{" "}
+            <a href="/connect">Change host</a>
+          </p>
+        ) : (
+          <p className="sub" style={{ marginBottom: 8 }}>
+            Not connected. Pots you create use the default demo host{" "}
+            <strong>{BRAND.handle}</strong>.{" "}
+            <a href="/connect">Connect your own Moove account</a> to receive payments
+            yourself.
+          </p>
+        )}
+
+        <form onSubmit={onSubmit}>
+          <label htmlFor="title">Pot title</label>
           <input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Dinner at Kalu's"
+            placeholder="Dinner at KFC's"
             required
-            className="w-full rounded-md border border-neutral-300 px-3 py-2"
           />
-        </div>
 
-        <div className="space-y-1">
-          <label htmlFor="total" className="block text-sm font-medium">
-            Total amount
+          <label htmlFor="people">
+            People and amounts ({MIN_PEOPLE}–{MAX_PEOPLE})
           </label>
+          {rows.map((row, i) => (
+            <div
+              key={i}
+              style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}
+            >
+              <input
+                aria-label={`Name ${i + 1}`}
+                value={row.name}
+                onChange={(e) => updateRow(i, { name: e.target.value })}
+                placeholder={i === 0 ? "Franklin" : "Name"}
+                style={{ flex: 1 }}
+              />
+              <input
+                aria-label={`Amount ${i + 1}`}
+                value={row.amount}
+                onChange={(e) => updateRow(i, { amount: e.target.value })}
+                placeholder={i === 0 ? "10.00" : "0.00"}
+                inputMode="decimal"
+                style={{ flex: "0 0 8.5rem" }}
+                className="amt"
+              />
+              {rows.length > MIN_PEOPLE ? (
+                <button
+                  type="button"
+                  aria-label={`Remove person ${i + 1}`}
+                  onClick={() => setRows((prev) => prev.filter((_, idx) => idx !== i))}
+                  style={{ padding: "10px 14px", background: "transparent", color: "var(--mute)" }}
+                >
+                  ✕
+                </button>
+              ) : null}
+            </div>
+          ))}
+          {rows.length < MAX_PEOPLE ? (
+            <button
+              type="button"
+              onClick={() => setRows((prev) => [...prev, emptyRow()])}
+              style={{ background: "transparent", color: "var(--gold)", padding: "8px 0" }}
+            >
+              + Add person
+            </button>
+          ) : null}
+
+          <label htmlFor="evensplit">Same amount for everyone (optional)</label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              id="evensplit"
+              value={evenAmount}
+              onChange={(e) => setEvenAmount(e.target.value)}
+              placeholder="12.50"
+              inputMode="decimal"
+              style={{ flex: "0 0 8.5rem" }}
+              className="amt"
+            />
+            <button
+              type="button"
+              className="btn-terra"
+              onClick={applySameForEveryone}
+              disabled={!/^\d+(\.\d{1,2})?$/.test(evenAmount.trim())}
+            >
+              Fill every row
+            </button>
+          </div>
+          <p className="sub" style={{ marginTop: 6 }}>
+            Only fills the amount boxes — names stay as you typed them.
+          </p>
+
+          <label htmlFor="total">Total (sum of rows)</label>
           <input
             id="total"
-            value={total}
-            onChange={(e) => setTotal(e.target.value)}
-            placeholder="80.00"
-            inputMode="decimal"
-            required
-            className="w-full rounded-md border border-neutral-300 px-3 py-2"
+            value={sumRows(rows)}
+            readOnly
+            tabIndex={-1}
+            className="amt"
+            style={{ opacity: 0.7 }}
           />
-          <p className="text-xs text-neutral-500">
-            Denominated in your Moove settlement token.
+          <p className="sub" style={{ marginTop: 6 }}>
+            Display only. The total is computed from the rows above.
           </p>
-        </div>
 
-        <div className="space-y-1">
-          <label htmlFor="names" className="block text-sm font-medium">
-            First names ({MIN_PEOPLE}–{MAX_PEOPLE}), one per line
-          </label>
-          <textarea
-            id="names"
-            value={namesText}
-            onChange={(e) => setNamesText(e.target.value)}
-            rows={6}
-            placeholder={"Ada\nChidi\nZara"}
-            required
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 font-mono text-sm"
-          />
-          <p className="text-xs text-neutral-500">{names.length} added</p>
-        </div>
+          {!host ? (
+            <>
+              <label htmlFor="admin">Demo host token</label>
+              <input
+                id="admin"
+                type="password"
+                value={adminToken}
+                onChange={(e) => setAdminToken(e.target.value)}
+                autoComplete="off"
+                required
+              />
+              <p className="sub" style={{ marginTop: 6 }}>
+                Only needed while using the default demo host ({BRAND.handle}).
+                Connected hosts do not need a token.
+              </p>
+            </>
+          ) : null}
 
-        <div className="space-y-1">
-          <label htmlFor="admin" className="block text-sm font-medium">
-            Host token
-          </label>
-          <input
-            id="admin"
-            type="password"
-            value={adminToken}
-            onChange={(e) => setAdminToken(e.target.value)}
-            autoComplete="off"
-            required
-            className="w-full rounded-md border border-neutral-300 px-3 py-2"
-          />
-          <p className="text-xs text-neutral-500">
-            Only the host can create pots. Payers never need this.
-          </p>
-        </div>
+          {error ? (
+            <p style={{ color: "#e11d48", marginTop: 12 }} role="alert">
+              {error}
+            </p>
+          ) : null}
 
-        {error ? (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-md bg-neutral-900 px-4 py-2.5 font-medium text-white disabled:opacity-50"
-        >
-          {busy ? "Creating payment links…" : "Create pot"}
-        </button>
-      </form>
-
-      <section className="space-y-2 text-sm text-neutral-600">
-        <h2 className="font-medium text-neutral-900">How it works</h2>
-        <ol className="list-decimal space-y-1 pl-5">
-          <li>Splitpot divides the total evenly, to the cent.</li>
-          <li>Each person gets their own one-time Moove payment link.</li>
-          <li>They pay in any token on any chain.</li>
-          <li>
-            Moove settles it to {BRAND.handle}, and the board turns green as each
-            link completes.
-          </li>
-        </ol>
-      </section>
-    </div>
+          <div style={{ marginTop: 18 }}>
+            <button type="submit" className="btn-gold" disabled={busy}>
+              {busy ? "Creating payment links…" : "Create pot"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }

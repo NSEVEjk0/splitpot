@@ -21,6 +21,9 @@ export interface Pot {
   currencyNote: string;
   status: PotStatus;
   createdAt: string;
+  hostId: string | null;
+  hostHandle: string | null;
+  isDemoHost: boolean;
 }
 
 export interface PotWithParticipants extends Pot {

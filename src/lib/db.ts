@@ -29,13 +29,23 @@ export function ensureSchema(): Promise<void> {
   const db = getDb();
   schemaPromise = (async () => {
     await db.execute(`
+      CREATE TABLE IF NOT EXISTS hosts (
+        id TEXT PRIMARY KEY,
+        handle TEXT NOT NULL UNIQUE,
+        key_encrypted TEXT NOT NULL,
+        key_last4 TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `);
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS pots (
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         total_amount TEXT NOT NULL,
         currency_note TEXT NOT NULL,
         status TEXT NOT NULL,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        host_id TEXT
       )
     `);
     await db.execute(`
@@ -55,6 +65,13 @@ export function ensureSchema(): Promise<void> {
     await db.execute(
       `CREATE INDEX IF NOT EXISTS idx_participants_pot ON participants (pot_id)`
     );
+    // Migration for databases created before hosts existed: add pots.host_id.
+    // SQLite has no ADD COLUMN IF NOT EXISTS, so ignore the duplicate error.
+    try {
+      await db.execute(`ALTER TABLE pots ADD COLUMN host_id TEXT`);
+    } catch {
+      // column already exists
+    }
   })();
   return schemaPromise;
 }
