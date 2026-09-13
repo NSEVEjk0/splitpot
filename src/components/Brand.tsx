@@ -12,6 +12,7 @@ export function SiteHeader() {
       </a>
       <nav className="nav">
         <a href="/connect">Connect</a>
+        <a href="/history">History</a>
         <a href={MOOVE_URL}>{HANDLE}</a>
         <a href={X_URL} target="_blank" rel="noreferrer">
           X

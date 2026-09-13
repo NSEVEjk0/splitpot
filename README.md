@@ -26,6 +26,14 @@ row with one amount, and a display-only total that shows the sum of the rows.
 Amounts are positive decimals with at most 2 decimal places. A pot has between
 2 and 12 people.
 
+## Transaction history
+
+A connected host can see their full history at `/history` (also linked in the
+header): every pot they created and the outcome of each payment — successful
+payments in green with their Moove transaction link and completion time,
+unpaid ones with a link back to the board — plus totals for received and
+outstanding amounts.
+
 ## How to test it (2 minutes)
 
 1. Open the [live demo](https://splitpot-mu.vercel.app).

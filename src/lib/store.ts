@@ -113,6 +113,32 @@ export async function getParticipant(
   return rowToParticipant(res.rows[0]);
 }
 
+/**
+ * Every pot created by a connected host, newest first, with participants —
+ * the host's transaction history: which payments landed and which did not.
+ */
+export async function getPotsByHostWithParticipants(
+  hostId: string,
+  limit = 50
+): Promise<PotWithParticipants[]> {
+  await ensureSchema();
+  const db = getDb();
+  const potRes = await db.execute({
+    sql: `SELECT * FROM pots WHERE host_id = ? ORDER BY created_at DESC LIMIT ?`,
+    args: [hostId, limit],
+  });
+  const pots = potRes.rows.map(rowToPot);
+  const out: PotWithParticipants[] = [];
+  for (const pot of pots) {
+    const partRes = await db.execute({
+      sql: `SELECT * FROM participants WHERE pot_id = ? ORDER BY position ASC`,
+      args: [pot.id],
+    });
+    out.push({ ...pot, participants: partRes.rows.map(rowToParticipant) });
+  }
+  return out;
+}
+
 export async function markParticipantPaid(
   participantId: string,
   completedAt: string,
