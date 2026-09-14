@@ -107,9 +107,13 @@ export async function createPaymentLink(
 
 export async function getPaymentLink(id: string, apiKey: string): Promise<PaymentLink> {
   const { apiBaseUrl } = config();
-  const res = await fetch(`${apiBaseUrl}${GET_PATH}/${encodeURIComponent(id)}`, {
+  // The plain GET path is served from a stale cache by Moove's infrastructure
+  // after a link completes; a unique query param returns the fresh state.
+  const bust = `?_=${Date.now()}`;
+  const res = await fetch(`${apiBaseUrl}${GET_PATH}/${encodeURIComponent(id)}${bust}`, {
     method: "GET",
     headers: headers(apiKey),
+    cache: "no-store",
   });
   const body = await readBody(res);
   if (!res.ok) {

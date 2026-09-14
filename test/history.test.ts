@@ -20,7 +20,7 @@ function mockMoove(completed: Set<string>) {
         { status: 201, headers: { "Content-Type": "application/json" } }
       );
     }
-    const id = String(url).split("/").pop() ?? "";
+    const id = String(url).split("/").pop()?.split("?")[0] ?? "";
     const done = completed.has(id);
     return new Response(
       JSON.stringify({
