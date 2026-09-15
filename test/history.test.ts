@@ -53,6 +53,38 @@ describe("GET /api/host/history", () => {
     expect(body.error).toContain("Connect");
   });
 
+  it("the demo host's session also sees admin-token pots; other hosts still see only their own", async () => {
+    const completed = new Set<string>();
+    vi.stubGlobal("fetch", mockMoove(completed));
+
+    // The demo handle connects (like @ckay connecting with the @ckay key).
+    const demoHost = await upsertHost("@ckay", "mk_live_demokey777");
+    const token = sessionTokenFor(demoHost);
+
+    // A pot created via the admin/demo path (host_id null).
+    await createPot(
+      {
+        title: "Demo pot",
+        people: [
+          { name: "X", amount: "1.00" },
+          { name: "Y", amount: "1.00" },
+        ],
+      },
+      await hostContextForPot(null)
+    );
+
+    const res = await historyGet(reqWithSession(token));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.pots.map((p: any) => p.title)).toContain("Demo pot");
+
+    // A different host must NOT see the demo pots.
+    const other = await upsertHost("@zara", "mk_live_other9999");
+    const otherRes = await historyGet(reqWithSession(sessionTokenFor(other)));
+    const otherBody = await otherRes.json();
+    expect(otherBody.pots.map((p: any) => p.title)).not.toContain("Demo pot");
+  });
+
   it("returns only the connected host's pots with payment outcomes", async () => {
     const completed = new Set<string>();
     vi.stubGlobal("fetch", mockMoove(completed));

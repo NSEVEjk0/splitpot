@@ -114,17 +114,22 @@ export async function getParticipant(
 }
 
 /**
- * Every pot created by a connected host, newest first, with participants —
- * the host's transaction history: which payments landed and which did not.
+ * Every pot a connected host should see in their history, newest first, with
+ * participants: pots created under their session (host_id), plus — when the
+ * connected host is also the demo host (@ckay by default) — pots created via
+ * the admin demo token, which carry no host id.
  */
 export async function getPotsByHostWithParticipants(
   hostId: string,
+  includeDemoPots = false,
   limit = 50
 ): Promise<PotWithParticipants[]> {
   await ensureSchema();
   const db = getDb();
   const potRes = await db.execute({
-    sql: `SELECT * FROM pots WHERE host_id = ? ORDER BY created_at DESC LIMIT ?`,
+    sql: `SELECT * FROM pots
+          WHERE host_id = ? ${includeDemoPots ? "OR host_id IS NULL" : ""}
+          ORDER BY created_at DESC LIMIT ?`,
     args: [hostId, limit],
   });
   const pots = potRes.rows.map(rowToPot);

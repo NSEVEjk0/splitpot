@@ -1,4 +1,5 @@
 import { getPotsByHostWithParticipants } from "@/lib/store";
+import { config } from "@/lib/config";
 import { getHostById, SESSION_COOKIE, verifySessionToken } from "@/lib/hosts";
 
 export const runtime = "nodejs";
@@ -45,7 +46,12 @@ export async function GET(req: Request) {
     return Response.json({ error: "Connect your Moove account first" }, { status: 401 });
   }
 
-  const pots = await getPotsByHostWithParticipants(host.id);
+  // The connected host sees their session pots, plus the admin-token demo
+  // pots when they are the configured demo host (e.g. @ckay connecting with
+  // the @ckay key should see every pot created on the demo path).
+  const isDemoHandle =
+    host.handle.toLowerCase() === config().handle.toLowerCase();
+  const pots = await getPotsByHostWithParticipants(host.id, isDemoHandle);
 
   const shaped = pots.map((pot) => ({
     id: pot.id,
